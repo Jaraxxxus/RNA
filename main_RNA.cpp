@@ -1,102 +1,137 @@
 #include <iostream>
 #include <string>
-#include <bitset>
 using namespace std;
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
- enum NUKL {A, G, C , T};
- typedef unsigned int tip;
+ typedef int tip;
+
+//===sizeof int: 4 bytes
 
 class RNA {
   public:	
-	tip *arr;
-	int cur=0;  //кол-во нуклидов обработано
-	int curN=0; // позиция в слове
-	tip curw=0;  // текущее слово, заполняетмя, по заполнению переносится в массив и обнуляется
-	int curpos=0;  //номер элемента массива arr
-  
-   void findN (int data) {
-   	while (data > 0)
-  	curw=curw>>2;
-  	curw=curw|data;
-  	cur++;
-   }
-  
- //============добавляет очередное значение в слово, которое позже перенесется при достижении полного размера 
-   void construct (int data1) {
-  	curw=curw<<2;
-  	curw=curw|data1;
-  	cur++;
-   }
+    int flag=0;
+	int *arr;
+	int cur;  //кол-во нуклидов обработано
+//	int curN=0; // позиция в слове
+//	tip curw=0;  // текущее слово, заполняетмя, по заполнению переносится в массив и обнуляется
+	int cursize=0;  //выделено байт
+	
+    enum Nucleotide{
+        T, C, G, A
+    };
+
+
+
+
+
 
 //==========выделяет память массиву   
   void setm (int size) {
-  	size=size*2;
-   arr = new tip [size];
+   cur= size;
+   size = (size/sizeof(int)/8+1)*2;
+   cout << "size our arr " << size;
+   cout << " " ;
+   arr = new int [size];   //в байтах, а не битах!!
     for (int i = 0; i < size; i++) {
         
         arr[i] = 0;
           
     }
+    cursize= size;
+     flag++; 
   }
-//==============  вызов заполения слова данными или перенос из слова в элемент массива данных
-  void readb (int data, int size) {
-  curN++;
   
-  if (curN > (sizeof(tip)*4)-1 || (cur==size-1))  {
-  		construct (data);
-   		curN=0;
-   		
-   		arr[curpos]=curw;
-   	//	cout << " arr  ";
-     //   cout << arr[curpos];
-     //   cout << " curpos  ";
-     //   cout << curpos;
-   		curpos++;
-   		curw =0;
-   	
-   	}
-   	else
-	   construct (data);
+//==============увеличение размера массива в 2 раза
+  void setNewm(int newsize){
+        //int oldsize=size;
+		cur = newsize;  	
+  	    newsize = (newsize/sizeof(int)/8+1)*2;
+        int *new_array = new int[newsize];
+        for (int i = 0; i < cursize; i++) {
+            new_array[i] = arr[i];
+        }
+        for (int i = cursize; i < newsize; i++) {
+            new_array[i] = 0;
+        }
+        delete arr;
+        arr = new_array;
+        cursize= newsize;
+        flag++;
+    
+		  
+		  
+}
+		  
 
-  }
- 
+
  //===========получить   элемент  из массива 
    tip getn (int num) {
    	int m=0; int n =0; tip z=0;int m1 = 0; int n1 = 0;
    	m = (num/(sizeof(tip)*4));  //элемент массива
    	
-  // 	cout << " m " << m;
+  
    	n = (num%(sizeof(tip)*4)); //элементе в массиве для поиска
    	n1 = (cur%(sizeof(tip)*4)); //колво нуклидов в последненм элементе массива
    	m1 = (cur/(sizeof(tip)*4));//последний элемент массива
-   	if (n1==0) m1= m1-1;  //деление целочисленное, то работа в текущ байте
-   	if (n==0) m= m-1;
- /*  	cout << " n "<< n;
-   	cout << " n1 "<< n1;
-   	cout << " m "<< m;
-   cout << " m1 "<< m1;*/
+   	//if (n1==0) m1= m1-1;  //деление целочисленное, то работа в текущ байте
+   //	if (n==0) m= m-1;
+ 
    
    	if (m == m1) {
-   	//cout << " !! ";
+   	
 	   z = arr[m];
-   	 //  cout << " z " << z;
-	 //  cout << " sdvig " << 2*(n1-n);
-    	z= z >> 2*(n1-n);
-	  // tip k= z&3;
-	 //  cout << " ono " << z ;
+   	   z= z >> 2*(n1-n-1);
 	   return z & 0b00000011;
     }
    	else{
    	
-   		cout << " n " << n;
+   	//	cout << " n " << n;
    		z = arr[m];
-    //	cout << " z " << z;
-    //	cout << " sdvig " << 2*(16-n);
-    	z= z >> 2*(16-n);
-	//	cout << " ono " << z ;
+    	z= z >> 2*((sizeof(tip)*4)-n-1);
     	return z & 0b00000011;}
 	}
+	
+	
+
    
+//============переопределение квардратных скобок================
+
+int operator [] (int pos) {
+if (cursize==0)
+{
+	 setm(pos);
+	 cur=pos;
+	 return 0;
+}
+else {
+
+   if (pos > cur) pos = cur;
+   return getn(pos);
+}
+
+};
+
+
+
+//===========переопределение = создает копию RNA=============================
+ RNA& operator=(const RNA rna) {
+  delete arr;
+ 
+  arr = new tip[rna.cur];
+  cur = rna.cur;
+  cursize = rna.cursize;
+  
+  for (int i = 0; i < cursize; i++) {
+     arr[i] = rna.arr[i];
+  }
+ return *this;
+ }
+
+//=============
+
+//===============
+
+
+
 //========удаляет хвост с номера=============
    void delp (int num ) {
    int m=0; int n =0; tip z=0;int m1 = 0; int n1 = 0;
@@ -119,48 +154,107 @@ class RNA {
    	else{
    	
    		cout << " m " << m;
-		//cout << " n " << n;
     	z = arr[m];
      	cout << " z " << z;
-    	cout << " sdvig " << 2*(16-n);
-    	z= z >> 2*(16-n);
+    	cout << " sdvig " << 2*((sizeof(tip)*4)-n-1);
+    	z= z >> 2*((sizeof(tip)*4)-n-1);
  	    arr[m] = z;
    }
    cout << " arr res " << arr[m];
+   cur = num;
 }
 //=============== заменяет номер на введенный==================
   
    void changeN (int num, int data ) {
-   	tip mult;
+   	//if (num == 0 || cur == 0) cur = 1; 
+   	if (num > cur) cur=num;
+   	tip mult; 
    	int m = (num/(sizeof(tip)*4));
    	int n = (num%(sizeof(tip)*4));
    	int n1 = (cur%(sizeof(tip)*4)); //колво нуклидов в последненм элементе
    	int m1 = (cur/(sizeof(tip)*4));//последний элемент массива
+ /*  	cout << " m-" << m;
+   	cout << " n-" << n;
+   	cout << " nl-" << n1;
+   	cout << " ml-" << m1;
+   	cout << "" ;
+   	*/
    	tip w = arr[m];
-   	if (m==m1) {
+  // 	cout << " word-" << w;
+  // 	cout << "" ;*/
    
-   	   mult=3 << 2*(n1-n);
+   
+    if (m ==m1) {
+   
+   	   mult=3 << 2*(n1-n-1);
    	   
-   	   data= data<<2*(n1-n);
+   	   data= data<<2*(n1-n-1);
+   	   cout << "!! " << data; ;
       }
 	else {
 	
-   		mult=3 << 2*(16-n);
-   		data= data<<2*(16-n);
+   		mult=3 << 2*((sizeof(tip)*4)-n-1);
+   		data= data<<2*((sizeof(tip)*4)-n-1);
       }
-  // 	cout << " mult " << mult;
    	mult =~mult;
-   //	cout << " anti mult " << mult;
    	w=w& mult;
-  // 	cout << " mult&w " << w;
    	w=w|data;
-   //	cout << " w|data " << w;
    	arr[m]=w;
-   	cout << " arr res " << arr[m];
+   //	cout << " res!!- " << arr[m];
+   	
     }
+
+//===========
+bool operator==(const RNA rna) const{
+	if (cur != rna.cur) return false; 
+        for (int i = 0; i < cursize; i++) {
+            if (arr[i] != rna.arr[i]) return false;
+        }
+        return true;
+}
+bool operator!=(const RNA rna) const{
+	if (cur != rna.cur) return true; 
+        for (int i = 0; i < cursize; i++) {
+            if (arr[i] != rna.arr[i]) return true;
+        }
+        return false;
+}
+
+RNA (int size) {
+	setm(size);
+	cur=size;
+}
+RNA (RNA&);
+
+
+//=====================Здесь  после реализации квадр скобки изменения элемента, пока не работает. 
+ RNA& operator+=(RNA rna){
+        int a;
+		int tmp = cur, data;
+        int newcur = tmp+rna.cur;
+        if (cursize < newcur){
+        	setNewm(newcur);
+
+		}
+		
+        for (int i = 0; i < rna.cur; i++){
+        	a = rna.getn(i);
+        	changeN(tmp+i, a);
+        }
+        cur=newcur;
+ return *this;
+ }
+
+
+
+~RNA(){
+	delete arr;	
+}
+
 };
-   
-//============ ОСВОБОЖДЕНИЕ ПАМЯТИ   
+
+
+
    
    
    
@@ -170,38 +264,99 @@ int main(int argc, char** argv) {
 	int n;
 	int ch;
 	tip c;
-	RNA BB;
-	
-	cout << "Dlina chepochki: ";
+	RNA BB(10), CC(10);
+	cout << " Dlina chepochki: ";
 	cin >> n;
-	BB.setm(n);
+//	BB.setm (n );
 	 cout << "cepochka: " ;
 	 c = BB.arr[0];
 	 cout << c ;
+	 int z = n;
 	for (i =0; i < n; i++) {
 	
 	   cout << i+1 << " ) ";
 	   cin >> ch;
-	   BB.readb(ch, n);
-	 //  cout << "slovo " << BB.curw;
+	  // BB.readb(ch, n);
+	   BB.changeN(i, ch);
+	  /* cout << " slovo " << BB.arr[0];
+	   	cout << " nomer: ";
+	    cin >> i;
+	*/
+	
+	  //  c=   BB[i]; //BB.getn(i);
+	  //  cout << " find  " << c << " ";
 	   
        }
        /* c = BB.arr[0];
         cout << "resultat " ;
 	    cout << c ;*/
-        cout << "massiv " << BB.arr[0];
- /*    cout << "nomer: ";
-	 cin >> i;*/
-	// c= BB.getn(i);
-/*	cout << " find  " << c;
-     cout << " change nomer: ";
+     //   cout << " massiv " << BB.arr[0];
+   /* while (n>0){
+    	n--;
+    	
+    	cout << " nomer: ";
+	    cin >> i;
+	
+	
+	 c=   BB[i]; //BB.getn(i);
+	  cout << " find  " << c;
+    	
+    	
+    }*/
+	
+	
+	 
+/*     cout << " change nomer: ";
 	 cin >> i;
 	 cout << " change on: ";
 	 cin >> ch;*/
-	 BB.changeN(i, ch);
-	 cout << " del s nomer: ";
+	
+/*	 cout << " change s nomer: ";
 	 cin >> i;
-	 BB.delp(i);
+	 cout << " change on value: ";
+	 cin >> c;
+	  BB.changeN(i, c);*/
+	  CC=BB;
+//	  cout << " massiv2 " << CC.arr[0];
+      int hh;
+	//  cout << " del with nomer: ";
+	  
+//	   cin >> hh;
+	  
+	  
+	//  CC+=BB;
+	 // cout << " massiv3 " << CC.arr[0];
+        BB.delp(3);
+  /*       while (z >=0){
+    	
+    	
+    		
+	
+	 c=   BB[z]; //BB.getn(i);
+	  cout << " find  " << c;
+    	
+    	z--;
+    }*/
+    z=0;
+    //BB+=CC;
+    while (z <=10){
+    	
+    	
+    		
+	
+	 c=   BB[z]; //BB.getn(i);
+	  cout << " find  " << c;
+    	
+    	z++;
+    }
+    
+/*	if (BB!=CC) hh=1;
+    cout << " eq " <<  hh;
+        */
+//	 cout << " res: ";
+	// int ccc = BB[2];
+//	 cout << "res del" << BB.arr[0];
+	// cout << "  EHU " << BB[i];
 	
 	return 0;
 }
